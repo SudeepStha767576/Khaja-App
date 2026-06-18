@@ -75,8 +75,9 @@ export default async function handler(req, res) {
     const upstream = await fetch(fullUrl, { method: req.method, headers, body: bodyData })
 
     res.status(upstream.status)
-    const etag = upstream.headers.get('etag')
-    if (etag) res.setHeader('ETag', etag)
+    // Never cache API responses — prevents browser serving stale BC data
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    res.setHeader('Pragma', 'no-cache')
 
     const text = await upstream.text()
     if (upstream.status === 204 || !text) return res.end()
