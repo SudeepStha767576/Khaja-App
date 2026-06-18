@@ -34,17 +34,16 @@ export default async function handler(req, res) {
   try {
     const token = await getToken()
 
-    // Build path from route param
-    const { path } = req.query
-    const pathStr = Array.isArray(path) ? path.join('/') : (path ?? '')
-
-    // Preserve raw query string from req.url so OData $-prefixed params
-    // ($filter, $top, $select) are NOT percent-encoded — BC won't recognise %24filter
+    // Derive path and query string entirely from req.url to avoid req.query.path issues
+    // req.url in Vercel = full path from root e.g. /api/khaja/khajaUserSetups?$filter=...
     const rawUrl = req.url ?? ''
-    const qIndex = rawUrl.indexOf('?')
-    const qs = qIndex >= 0 ? rawUrl.slice(qIndex) : ''
+    const stripped = rawUrl.replace(/^\/api\/khaja\/?/, '')   // remove /api/khaja/ prefix
+    const qIndex = stripped.indexOf('?')
+    const pathStr = qIndex >= 0 ? stripped.slice(0, qIndex) : stripped
+    const qs      = qIndex >= 0 ? stripped.slice(qIndex) : ''
 
     const fullUrl = `${BC_BASE}/${pathStr}${qs}`
+    console.log('[BC Proxy]', req.method, fullUrl)
 
     const isBinary = (req.headers['content-type'] ?? '').startsWith('image/')
 
