@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, PlusCircle } from 'lucide-react'
+import { PlusCircle } from 'lucide-react'
 import { getMyHeaders, releaseHeader } from '../api/headers.api'
 import { getLinesByDocument, resetLine } from '../api/lines.api'
 import { useKhajaUser } from '../auth/UserContext'

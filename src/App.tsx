@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { useMsal, MsalAuthenticationTemplate } from '@azure/msal-react'
+import { useMsal, MsalAuthenticationTemplate, type MsalAuthenticationResult } from '@azure/msal-react'
 import { InteractionType } from '@azure/msal-browser'
 import { loginRequest } from './auth/msalConfig'
 import { UserProvider, useKhajaUser } from './auth/UserContext'
@@ -83,13 +83,13 @@ function AuthLoading() {
   )
 }
 
-function AuthError({ error }: { error: Error }) {
+function AuthError({ error }: MsalAuthenticationResult) {
   return (
     <div className="flex items-center justify-center min-h-screen px-4">
       <div className="glass-card p-8 max-w-sm w-full text-center">
         <p className="text-3xl mb-3">⚠️</p>
         <h1 className="text-xl font-bold text-white mb-2">Sign-in failed</h1>
-        <p className="text-sm text-sm">{error.message}</p>
+        <p className="text-sm">{error?.message ?? 'Authentication failed'}</p>
       </div>
     </div>
   )

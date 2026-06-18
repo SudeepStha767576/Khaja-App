@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/khaja/:path*", "destination": "/api/khaja/:path*" }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}

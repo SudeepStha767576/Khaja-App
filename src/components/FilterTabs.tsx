@@ -3,7 +3,7 @@ import type { LineStatusFilter } from '../types/khaja'
 interface FilterTabsProps {
   active: LineStatusFilter
   onChange: (filter: LineStatusFilter) => void
-  counts?: { Unpaid: number; Paid: number; All: number }
+  counts?: Partial<Record<LineStatusFilter, number>>
 }
 
 const TABS: { value: LineStatusFilter; label: string }[] = [

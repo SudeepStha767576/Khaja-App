@@ -117,7 +117,7 @@ export async function uploadScreenshotBinary(id: string, blob: Blob, etag: strin
 export async function markPaidWithScreenshot(
   id: string,
   paymentNote: string,
-  screenshotBase64: string,
+  _screenshotBase64: string,
   etag: string
 ): Promise<KhajaLine> {
   return markAsPaid(id, paymentNote, etag)
