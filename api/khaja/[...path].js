@@ -35,15 +35,14 @@ export default async function handler(req, res) {
     const token = await getToken()
 
     // Build path from route param
-    const { path, ...queryRest } = req.query
+    const { path } = req.query
     const pathStr = Array.isArray(path) ? path.join('/') : (path ?? '')
 
-    // Rebuild query string from remaining params (e.g. $filter, $top)
-    const qs = Object.keys(queryRest).length
-      ? '?' + Object.entries(queryRest)
-          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(Array.isArray(v) ? v[0] : v)}`)
-          .join('&')
-      : ''
+    // Preserve raw query string from req.url so OData $-prefixed params
+    // ($filter, $top, $select) are NOT percent-encoded — BC won't recognise %24filter
+    const rawUrl = req.url ?? ''
+    const qIndex = rawUrl.indexOf('?')
+    const qs = qIndex >= 0 ? rawUrl.slice(qIndex) : ''
 
     const fullUrl = `${BC_BASE}/${pathStr}${qs}`
 
