@@ -1,5 +1,4 @@
-// Vercel serverless function — replaces the Express proxy for production
-// Reads credentials from Vercel environment variables
+// Vercel serverless proxy for BC API
 const BC_BASE = `https://api.businesscentral.dynamics.com/v2.0/${process.env.TENANT_ID}/${process.env.BC_ENVIRONMENT ?? 'OA'}/api/qnipay/khaja/v1.0`
 const TOKEN_URL = `https://login.microsoftonline.com/${process.env.TENANT_ID}/oauth2/v2.0/token`
 
@@ -15,7 +14,10 @@ async function getToken() {
     scope: 'https://api.businesscentral.dynamics.com/.default',
   })
   const res = await fetch(TOKEN_URL, { method: 'POST', body })
-  if (!res.ok) throw new Error(`Token failed: ${res.status}`)
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`Token failed ${res.status}: ${t}`)
+  }
   const data = await res.json()
   cachedToken = data.access_token
   tokenExpiry = Date.now() + data.expires_in * 1000
@@ -23,13 +25,27 @@ async function getToken() {
 }
 
 export default async function handler(req, res) {
+  // CORS preflight
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,DELETE,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,If-Match,Authorization')
+  if (req.method === 'OPTIONS') return res.status(200).end()
+
   try {
     const token = await getToken()
-    const { path } = req.query
-    const pathStr = Array.isArray(path) ? path.join('/') : path ?? ''
-    const url = new URL(`${BC_BASE}/${pathStr}`)
-    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''
-    const fullUrl = `${url.toString()}${qs}`
+
+    // Build path from route param
+    const { path, ...queryRest } = req.query
+    const pathStr = Array.isArray(path) ? path.join('/') : (path ?? '')
+
+    // Rebuild query string from remaining params (e.g. $filter, $top)
+    const qs = Object.keys(queryRest).length
+      ? '?' + Object.entries(queryRest)
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(Array.isArray(v) ? v[0] : v)}`)
+          .join('&')
+      : ''
+
+    const fullUrl = `${BC_BASE}/${pathStr}${qs}`
 
     const isBinary = (req.headers['content-type'] ?? '').startsWith('image/')
 
@@ -43,36 +59,40 @@ export default async function handler(req, res) {
     if (req.headers['if-match']) headers['If-Match'] = req.headers['if-match']
 
     const hasBody = ['POST', 'PATCH', 'PUT'].includes(req.method)
-    let body = undefined
+    let bodyData = undefined
     if (hasBody) {
       if (isBinary) {
-        // Collect raw binary chunks
-        body = await new Promise((resolve, reject) => {
+        bodyData = await new Promise((resolve, reject) => {
           const chunks = []
           req.on('data', c => chunks.push(c))
           req.on('end', () => resolve(Buffer.concat(chunks)))
           req.on('error', reject)
         })
       } else {
-        body = JSON.stringify(req.body)
+        bodyData = JSON.stringify(req.body)
       }
     }
 
-    const upstream = await fetch(fullUrl, { method: req.method, headers, body })
+    const upstream = await fetch(fullUrl, { method: req.method, headers, body: bodyData })
 
     res.status(upstream.status)
     const etag = upstream.headers.get('etag')
     if (etag) res.setHeader('ETag', etag)
-    res.setHeader('Access-Control-Allow-Origin', '*')
 
     const text = await upstream.text()
     if (upstream.status === 204 || !text) return res.end()
-    const ct = upstream.headers.get('content-type') ?? ''
-    res.setHeader('Content-Type', ct || 'application/json')
+
+    const ct = upstream.headers.get('content-type') ?? 'application/json'
+    res.setHeader('Content-Type', ct)
     res.send(text)
   } catch (err) {
+    console.error('[BC Proxy Error]', err.message)
     res.status(502).json({ error: err.message })
   }
 }
 
-export const config = { api: { bodyParser: { sizeLimit: '20mb' } } }
+export const config = {
+  api: {
+    bodyParser: { sizeLimit: '20mb' },
+  },
+}
