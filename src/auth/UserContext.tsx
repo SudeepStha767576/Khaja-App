@@ -16,8 +16,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // accounts[0].username is the UPN — same as their Dogma Group email
-    const email = accounts[0]?.username
+    // For guest users in another tenant, accounts[0].username may return the
+    // external UPN format (user_domain.co.uk#EXT#@...). Use idTokenClaims to
+    // get the actual email address reliably across tenants.
+    const claims = accounts[0]?.idTokenClaims as Record<string, string> | undefined
+    const email =
+      claims?.email ??
+      claims?.preferred_username ??
+      claims?.upn ??
+      accounts[0]?.username   // fallback
+
     if (!email) {
       setLoading(false)
       return
