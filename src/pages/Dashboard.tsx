@@ -21,20 +21,6 @@ const STATUS_BADGE: Record<string, string> = {
 
 interface DashboardProps { khajaUser: KhajaUserSetup }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) => {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="text-xs px-3 py-2 rounded-xl" style={{ background: '#101010', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}>
-      <p className="font-semibold mb-1">{label}</p>
-      {payload.map(p => (
-        <p key={p.name} style={{ color: p.name === 'paid' ? '#6EE7B7' : '#aaa' }}>
-          {p.name === 'paid' ? 'Paid' : 'Owed'}: Rs. {p.value.toLocaleString()}
-        </p>
-      ))}
-    </div>
-  )
-}
 
 export function Dashboard({ khajaUser }: DashboardProps) {
   const navigate = useNavigate()
