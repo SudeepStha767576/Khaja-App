@@ -89,11 +89,13 @@ export async function resetLine(id: string, newAmount?: number): Promise<KhajaLi
   return res.data
 }
 
-// Step 1: mark as paid with note
-export async function markAsPaid(id: string, paymentNote: string, etag: string): Promise<KhajaLine> {
+// Mark as paid — optionally include screenshot as base64 (same JSON approach as QR upload)
+export async function markAsPaid(id: string, paymentNote: string, etag: string, screenshotBase64?: string): Promise<KhajaLine> {
+  const body: Record<string, unknown> = { paymentStatus: 'Paid', paymentNote }
+  if (screenshotBase64) body.screenshotBase64 = screenshotBase64
   const res = await bcClient.patch<KhajaLine>(
     `/khajaLines(${id})`,
-    { paymentStatus: 'Paid', paymentNote },
+    body,
     { headers: { 'If-Match': etag } }
   )
   return res.data

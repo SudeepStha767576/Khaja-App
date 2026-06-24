@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, CheckCircle2, AlertTriangle, Camera } from 'lucide-react'
-import { getLine, getLinesByDocument, acceptLine, rejectLine, resetLine, markAsPaid, uploadScreenshotBinary } from '../api/lines.api'
+import { getLine, getLinesByDocument, acceptLine, rejectLine, resetLine, markAsPaid } from '../api/lines.api'
 import { getHeaderByNo } from '../api/headers.api'
 import { useKhajaUser } from '../auth/UserContext'
 import { QRCodeDisplay } from '../components/QRCodeDisplay'
 import type { KhajaHeader, KhajaLine } from '../types/khaja'
 
-function compressToBlob(file: File, maxPx = 800, quality = 0.75): Promise<Blob> {
+// Same approach as QR code: compress → base64 string → JSON PATCH
+// Avoids OData media endpoint which causes Vercel routing issues with parentheses
+function compressToBase64(file: File, maxPx = 800, quality = 0.75): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -18,7 +20,8 @@ function compressToBlob(file: File, maxPx = 800, quality = 0.75): Promise<Blob> 
       const c = document.createElement('canvas')
       c.width = Math.round(img.width * r); c.height = Math.round(img.height * r)
       c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height)
-      c.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', quality)
+      const dataUrl = c.toDataURL('image/jpeg', quality)
+      resolve(dataUrl.substring(dataUrl.indexOf(',') + 1))
     }
     img.onerror = reject; img.src = url
   })
@@ -268,13 +271,10 @@ export function PaymentDetail() {
               </div>
               <button onClick={() => run(async () => {
                 if (!screenshotFile) return
-                const updated = await markAsPaid(myLine.id, note, '*')
-                upd(updated)
-                try {
-                  const blob = await compressToBlob(screenshotFile)
-                  await uploadScreenshotBinary(myLine.id, blob, '*')
-                  upd({ ...updated, screenshotAttached: true })
-                } catch { setActionErr('Paid ✓ but screenshot upload failed. Try again.') }
+                // Same approach as QR upload: base64 in JSON PATCH — avoids binary endpoint routing issues
+                const base64 = await compressToBase64(screenshotFile)
+                const updated = await markAsPaid(myLine.id, note, '*', base64)
+                upd({ ...updated, screenshotAttached: true })
               })} disabled={!screenshotFile || busy}
                 className="btn-primary w-full py-3 text-sm">
                 {busy ? '…' : 'Confirm Payment'}
