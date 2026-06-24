@@ -24,7 +24,7 @@ export function LineCard({ line }: { line: KhajaLine }) {
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0 pr-3">
           <p className="text-xs mb-1" style={{ color: 'var(--text-3)' }}>{line.documentNo}</p>
-          <p className="text-sm font-semibold text-white truncate">{line.description || 'Khaja payment'}</p>
+          <p className="text-sm font-semibold text-white truncate">{line.headerDescription || line.description || line.documentNo}</p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>
             Owed to <span className="text-white">{line.paymentByName ?? line.userName}</span>
           </p>

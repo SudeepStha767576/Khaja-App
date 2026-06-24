@@ -211,7 +211,7 @@ export function Dashboard({ khajaUser }: DashboardProps) {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-white truncate">{line.userName}</p>
                     <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-2)' }}>
-                      {line.description || line.documentNo}
+                      {line.headerDescription || line.description || line.documentNo}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 ml-3 shrink-0">
@@ -283,7 +283,7 @@ export function Dashboard({ khajaUser }: DashboardProps) {
                   {(line.paymentByName ?? '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F5F3FF' }}>{line.description || 'Khaja payment'}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#F5F3FF' }}>{line.headerDescription || line.description || line.documentNo}</p>
                   <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                     {line.documentNo} · Owed to <span style={{ color: 'var(--text-2)' }}>{line.paymentByName}</span>
                   </p>

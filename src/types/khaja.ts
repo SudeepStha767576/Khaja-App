@@ -30,6 +30,7 @@ export interface KhajaLine {
   screenshotBase64?: string
   paymentByQrBase64?: string
   paymentByName?: string
+  headerDescription?: string
   rejectionReason?: string
   acceptedDateTime?: string
   rejectedDateTime?: string
