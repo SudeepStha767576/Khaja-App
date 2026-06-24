@@ -52,19 +52,15 @@ export function Dashboard({ khajaUser }: DashboardProps) {
   const disputed    = myAll.filter(l => l.paymentStatus === 'Rejected').length
   const outstanding = myAll.filter(l => l.paymentStatus !== 'Paid')
 
-  // Lines from MY documents that others haven't paid back yet (what I'm owed)
+  // Lines from MY documents that haven't been paid yet (all, including own line)
   const dueReceipts = allLines.filter(l =>
-    myDocNos.has(l.documentNo) &&
-    l.paymentStatus !== 'Paid' &&
-    l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
+    myDocNos.has(l.documentNo) && l.paymentStatus !== 'Paid'
   )
-  const dueTotal      = dueReceipts.reduce((s, l) => s + l.amount, 0)
+  const dueTotal = dueReceipts.reduce((s, l) => s + l.amount, 0)
 
-  // Lines from my docs that are already Paid (total receipts collected)
+  // Lines from my docs that are Paid (all, including own line)
   const receivedLines = allLines.filter(l =>
-    myDocNos.has(l.documentNo) &&
-    l.paymentStatus === 'Paid' &&
-    l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
+    myDocNos.has(l.documentNo) && l.paymentStatus === 'Paid'
   )
   const totalReceived = receivedLines.reduce((s, l) => s + l.amount, 0)
 
