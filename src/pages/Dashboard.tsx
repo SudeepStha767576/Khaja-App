@@ -50,7 +50,6 @@ export function Dashboard({ khajaUser }: DashboardProps) {
   const totalOwed = myAll.filter(l => l.paymentStatus !== 'Paid').reduce((s, l) => s + l.amount, 0)
   const totalPaid = myAll.filter(l => l.paymentStatus === 'Paid').reduce((s, l) => s + l.amount, 0)
   const disputed    = myAll.filter(l => l.paymentStatus === 'Rejected').length
-  const accepted    = myAll.filter(l => l.paymentStatus === 'Accepted').length
   const outstanding = myAll.filter(l => l.paymentStatus !== 'Paid')
 
   // Lines from MY documents that others haven't paid back yet (what I'm owed)
