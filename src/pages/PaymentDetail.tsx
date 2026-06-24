@@ -116,15 +116,26 @@ export function PaymentDetail() {
         </div>
       </motion.div>
 
-      {/* QR */}
-      {(status === 'Accepted' || status === 'Unpaid') && (
-        <motion.div className="card p-5 flex flex-col items-center"
+      {/* QR + prominent amount */}
+      {(status === 'Accepted' || status === 'Unpaid') && myLine && (
+        <motion.div className="card p-5 flex flex-col items-center gap-4"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
+
           <QRCodeDisplay
             base64={payerInfo?.qr}
             payerName={payerInfo?.name ?? ''}
             size={180}
           />
+
+          {/* Amount banner — shown right below QR so user knows what to pay */}
+          <div className="w-full rounded-xl px-5 py-4 flex items-center justify-between"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div>
+              <p className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>Your amount to pay</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>to {payerInfo?.name}</p>
+            </div>
+            <p className="text-3xl font-bold text-white">Rs. {myLine.amount.toLocaleString()}</p>
+          </div>
         </motion.div>
       )}
 
