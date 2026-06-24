@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, AlertTriangle, Camera } from 'lucide-react'
 import { getLine, getLinesByDocument, acceptLine, rejectLine, resetLine, markAsPaid, uploadScreenshotBinary } from '../api/lines.api'
 import { getHeaderByNo } from '../api/headers.api'
 import { useKhajaUser } from '../auth/UserContext'
+import { QRCodeDisplay } from '../components/QRCodeDisplay'
 import type { KhajaHeader, KhajaLine } from '../types/khaja'
 
 function compressToBlob(file: File, maxPx = 800, quality = 0.75): Promise<Blob> {
@@ -113,17 +114,15 @@ export function PaymentDetail() {
       </motion.div>
 
       {/* QR */}
-      {(status === 'Accepted' || status === 'Unpaid') && payerInfo?.qr && (
-        <motion.div className="card p-5 flex flex-col items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
-          <p className="text-sm" style={{ color: 'var(--text-2)' }}>Scan to pay <span className="text-white font-medium">{payerInfo.name}</span></p>
-          <img src={`data:image/jpeg;base64,${payerInfo.qr}`} alt="QR Code"
-            className="rounded-xl" style={{ width: 200, height: 200, objectFit: 'contain', border: '1px solid rgba(255,255,255,0.07)' }} />
+      {(status === 'Accepted' || status === 'Unpaid') && (
+        <motion.div className="card p-5 flex flex-col items-center"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
+          <QRCodeDisplay
+            base64={payerInfo?.qr}
+            payerName={payerInfo?.name ?? ''}
+            size={180}
+          />
         </motion.div>
-      )}
-      {(status === 'Accepted' || status === 'Unpaid') && !payerInfo?.qr && (
-        <div className="card p-4 text-center text-sm" style={{ color: 'var(--text-2)' }}>
-          {payerInfo?.name} hasn't uploaded their QR code yet.
-        </div>
       )}
 
       {/* All lines */}
