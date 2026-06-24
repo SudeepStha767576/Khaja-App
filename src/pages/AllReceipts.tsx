@@ -49,7 +49,10 @@ export function AllReceipts() {
         const released = headers.filter(h => h.status === 'Released')
         const withLines = await Promise.all(released.map(async h => {
           const lines = await getLinesByDocument(h.no, 'All')
-          const paidLines = lines.filter(l => l.paymentStatus === 'Paid')
+          const paidLines = lines.filter(
+            l => l.paymentStatus === 'Paid' &&
+                 l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
+          )
           return { header: h, paidLines, totalReceived: paidLines.reduce((s, l) => s + l.amount, 0) }
         }))
         const result = withLines
