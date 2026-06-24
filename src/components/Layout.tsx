@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useKhajaUser } from '../auth/UserContext'
-import { LayoutDashboard, Wallet, ListChecks, PlusCircle, LogOut, ChevronRight, Users } from 'lucide-react'
+import { LayoutDashboard, Wallet, ListChecks, Receipt, PlusCircle, LogOut, ChevronRight, Users } from 'lucide-react'
 
 const NAV = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/my-expenses', icon: Wallet,           label: 'My Expenses' },
-  { to: '/unpaid',      icon: ListChecks,       label: 'All Unpaid' },
+  { to: '/unpaid',      icon: ListChecks,       label: 'To Receive' },
+  { to: '/receipts',    icon: Receipt,          label: 'All Receipts' },
   { to: '/members',     icon: Users,            label: 'Members' },
   { to: '/new',         icon: PlusCircle,       label: 'New Expense' },
 ]

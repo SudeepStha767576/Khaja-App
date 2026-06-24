@@ -74,11 +74,11 @@ export function UnpaidOverview() {
   return (
     <div className="max-w-2xl mx-auto px-4 lg:px-8 py-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">All Unpaid</h1>
+        <h1 className="text-xl font-bold text-white">To Receive</h1>
         <p className="text-sm mt-0.5" style={{ color: 'var(--text-2)' }}>
           {totalPeople > 0
-            ? `${totalPeople} ${totalPeople === 1 ? 'person' : 'people'} owe you · Rs. ${totalAmount.toLocaleString()}`
-            : 'People who owe you from your documents'}
+            ? `${totalPeople} ${totalPeople === 1 ? 'person' : 'people'} yet to pay you · Rs. ${totalAmount.toLocaleString()}`
+            : 'No pending payments from your documents'}
         </p>
       </div>
 

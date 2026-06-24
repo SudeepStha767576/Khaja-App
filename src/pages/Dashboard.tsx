@@ -59,7 +59,15 @@ export function Dashboard({ khajaUser }: DashboardProps) {
     l.paymentStatus !== 'Paid' &&
     l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
   )
-  const dueTotal = dueReceipts.reduce((s, l) => s + l.amount, 0)
+  const dueTotal      = dueReceipts.reduce((s, l) => s + l.amount, 0)
+
+  // Lines from my docs that are already Paid (total receipts collected)
+  const receivedLines = allLines.filter(l =>
+    myDocNos.has(l.documentNo) &&
+    l.paymentStatus === 'Paid' &&
+    l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
+  )
+  const totalReceived = receivedLines.reduce((s, l) => s + l.amount, 0)
 
   const chartData = Object.values(
     myAll.reduce<Record<string, { name: string; paid: number; owed: number }>>((acc, l) => {
@@ -72,11 +80,11 @@ export function Dashboard({ khajaUser }: DashboardProps) {
   ).slice(-7)
 
   const stats = [
-    { label: 'Outstanding',    value: totalOwed,  prefix: 'Rs. ', icon: Clock,         color: '#D97706' },
-    { label: 'Total Paid',     value: totalPaid,  prefix: 'Rs. ', icon: CheckCircle2,  color: '#10B981' },
-    { label: 'Due Receipt',    value: dueTotal,   prefix: 'Rs. ', icon: Receipt,        color: '#60A5FA' },
-    { label: 'Accepted',       value: accepted,   prefix: '', suffix: ' items',         icon: TrendingUp, color: '#A3A3A3' },
-    { label: 'Disputes',       value: disputed,   prefix: '', suffix: disputed === 1 ? ' dispute' : ' disputes', icon: AlertTriangle, color: '#EF4444' },
+    { label: 'Outstanding',      value: totalOwed,     prefix: 'Rs. ', icon: Clock,          color: '#D97706' },
+    { label: 'Total Paid',       value: totalPaid,     prefix: 'Rs. ', icon: CheckCircle2,   color: '#10B981' },
+    { label: 'Due Receipt',      value: dueTotal,      prefix: 'Rs. ', icon: Receipt,        color: '#60A5FA' },
+    { label: 'Total Receipts',   value: totalReceived, prefix: 'Rs. ', icon: TrendingUp,     color: '#34D399' },
+    { label: 'Disputes',         value: disputed,      prefix: '', suffix: disputed === 1 ? ' dispute' : ' disputes', icon: AlertTriangle, color: '#EF4444' },
   ]
 
   return (

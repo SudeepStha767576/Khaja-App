@@ -11,6 +11,7 @@ import { UnpaidOverview } from './pages/UnpaidOverview'
 import { NewExpense }    from './pages/NewExpense'
 import { MyExpenses }    from './pages/MyExpenses'
 import { UserSetup }     from './pages/UserSetup'
+import { AllReceipts }   from './pages/AllReceipts'
 import { getAllLines }   from './api/lines.api'
 import { getMyHeaders }  from './api/headers.api'
 
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/payment/:id" element={<PaymentDetail />} />
         <Route path="/my-expenses" element={<MyExpenses />} />
         <Route path="/unpaid"      element={<UnpaidOverview />} />
+        <Route path="/receipts"    element={<AllReceipts />} />
         <Route path="/members"     element={<UserSetup />} />
         <Route path="/new"         element={<NewExpense />} />
       </Routes>
