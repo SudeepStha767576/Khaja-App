@@ -317,6 +317,7 @@ export function PaymentDetail() {
                   <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>{new Date(myLine.paidDateTime).toLocaleString()}</p>
                 )}
               </div>
+
               {stillOwing.length > 0 && (
                 <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
                   <p className="text-xs font-semibold mb-2" style={{ color: '#D97706' }}>Still waiting for ({stillOwing.length}):</p>
