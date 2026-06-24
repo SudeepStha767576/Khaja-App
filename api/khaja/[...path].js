@@ -24,6 +24,16 @@ async function getToken() {
   return cachedToken
 }
 
+// Read raw body as Buffer — works for both JSON and binary
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', c => chunks.push(typeof c === 'string' ? Buffer.from(c) : c))
+    req.on('end', () => resolve(Buffer.concat(chunks)))
+    req.on('error', reject)
+  })
+}
+
 export default async function handler(req, res) {
   // CORS preflight
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -34,47 +44,39 @@ export default async function handler(req, res) {
   try {
     const token = await getToken()
 
-    // Derive path and query string entirely from req.url to avoid req.query.path issues
-    // req.url in Vercel = full path from root e.g. /api/khaja/khajaUserSetups?$filter=...
+    // Derive path and query string from req.url
     const rawUrl = req.url ?? ''
-    const stripped = rawUrl.replace(/^\/api\/khaja\/?/, '')   // remove /api/khaja/ prefix
+    const stripped = rawUrl.replace(/^\/api\/khaja\/?/, '')
     const qIndex = stripped.indexOf('?')
     const pathStr = qIndex >= 0 ? stripped.slice(0, qIndex) : stripped
     const qs      = qIndex >= 0 ? stripped.slice(qIndex) : ''
-
     const fullUrl = `${BC_BASE}/${pathStr}${qs}`
+
     console.log('[BC Proxy]', req.method, fullUrl)
 
-    const isBinary = (req.headers['content-type'] ?? '').startsWith('image/')
+    const contentType = req.headers['content-type'] ?? ''
+    const isBinary = contentType.startsWith('image/') || contentType === 'application/octet-stream'
 
     const headers = {
       Authorization: `Bearer ${token}`,
-      'Content-Type': isBinary ? req.headers['content-type'] : 'application/json',
+      'Content-Type': isBinary ? contentType : 'application/json',
       Accept: 'application/json',
       'OData-MaxVersion': '4.0',
       'OData-Version': '4.0',
     }
     if (req.headers['if-match']) headers['If-Match'] = req.headers['if-match']
 
-    const hasBody = ['POST', 'PATCH', 'PUT'].includes(req.method)
     let bodyData = undefined
+    const hasBody = ['POST', 'PATCH', 'PUT'].includes(req.method)
     if (hasBody) {
-      if (isBinary) {
-        bodyData = await new Promise((resolve, reject) => {
-          const chunks = []
-          req.on('data', c => chunks.push(c))
-          req.on('end', () => resolve(Buffer.concat(chunks)))
-          req.on('error', reject)
-        })
-      } else {
-        bodyData = JSON.stringify(req.body)
-      }
+      // Read raw body — bodyParser is disabled so we always get the raw stream
+      const rawBuffer = await readRawBody(req)
+      bodyData = rawBuffer.length > 0 ? rawBuffer : undefined
     }
 
     const upstream = await fetch(fullUrl, { method: req.method, headers, body: bodyData })
 
     res.status(upstream.status)
-    // Never cache API responses — prevents browser serving stale BC data
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     res.setHeader('Pragma', 'no-cache')
 
@@ -90,8 +92,9 @@ export default async function handler(req, res) {
   }
 }
 
+// IMPORTANT: disable bodyParser so we can read raw binary body for image uploads
 export const config = {
   api: {
-    bodyParser: { sizeLimit: '20mb' },
+    bodyParser: false,
   },
 }
