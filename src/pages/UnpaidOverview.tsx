@@ -63,7 +63,7 @@ export function UnpaidOverview() {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [khajaUser])
+  }, [khajaUser?.code, khajaUser?.email])
 
   const totalPeople = groups.reduce((s, g) => s + g.lines.length, 0)
   const totalAmount = groups.reduce((s, g) => s + g.totalUnpaid, 0)

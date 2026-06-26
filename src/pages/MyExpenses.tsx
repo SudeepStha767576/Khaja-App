@@ -37,7 +37,7 @@ export function MyExpenses() {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [khajaUser])
+  }, [khajaUser?.code, khajaUser?.email])
 
   function updLine(docNo: string, updated: KhajaLine) {
     setDocs(p => p.map(d => d.header.no === docNo ? { ...d, lines: d.lines.map(l => l.id === updated.id ? updated : l) } : d))

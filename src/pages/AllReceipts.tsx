@@ -64,7 +64,7 @@ export function AllReceipts() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [khajaUser])
+  }, [khajaUser?.code, khajaUser?.email])
 
   const totalReceived = groups.reduce((s, g) => s + g.totalReceived, 0)
   const totalPeople   = groups.reduce((s, g) => s + g.paidLines.length, 0)

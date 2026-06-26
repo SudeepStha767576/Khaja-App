@@ -1,19 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useMsal, MsalAuthenticationTemplate, type MsalAuthenticationResult } from '@azure/msal-react'
 import { InteractionType } from '@azure/msal-browser'
 import { loginRequest } from './auth/msalConfig'
 import { UserProvider, useKhajaUser } from './auth/UserContext'
 import { Layout } from './components/Layout'
-import { Dashboard }     from './pages/Dashboard'
-import { PaymentDetail } from './pages/PaymentDetail'
-import { UnpaidOverview } from './pages/UnpaidOverview'
-import { NewExpense }    from './pages/NewExpense'
-import { MyExpenses }    from './pages/MyExpenses'
-import { UserSetup }     from './pages/UserSetup'
-import { AllReceipts }   from './pages/AllReceipts'
 import { getAllLines }   from './api/lines.api'
 import { getMyHeaders }  from './api/headers.api'
+
+// Route-level code splitting — each page loads only when first visited
+const Dashboard     = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })))
+const PaymentDetail = lazy(() => import('./pages/PaymentDetail').then(m => ({ default: m.PaymentDetail })))
+const UnpaidOverview = lazy(() => import('./pages/UnpaidOverview').then(m => ({ default: m.UnpaidOverview })))
+const NewExpense    = lazy(() => import('./pages/NewExpense').then(m => ({ default: m.NewExpense })))
+const MyExpenses    = lazy(() => import('./pages/MyExpenses').then(m => ({ default: m.MyExpenses })))
+const UserSetup     = lazy(() => import('./pages/UserSetup').then(m => ({ default: m.UserSetup })))
+const AllReceipts   = lazy(() => import('./pages/AllReceipts').then(m => ({ default: m.AllReceipts })))
 
 function NotRegistered() {
   const { accounts, instance } = useMsal()
@@ -60,7 +62,13 @@ function AppRoutes() {
 
   return (
     <Layout disputeCount={disputeCount}>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-64" style={{ color: 'var(--text-2)', fontSize: '0.875rem' }}>
+          Loading…
+        </div>
+      }>
       <Routes>
+
         <Route path="/"            element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard"   element={<Dashboard khajaUser={khajaUser} />} />
         <Route path="/payment/:id" element={<PaymentDetail />} />
@@ -70,6 +78,7 @@ function AppRoutes() {
         <Route path="/members"     element={<UserSetup />} />
         <Route path="/new"         element={<NewExpense />} />
       </Routes>
+      </Suspense>
     </Layout>
   )
 }

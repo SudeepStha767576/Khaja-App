@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { motion } from 'framer-motion'
@@ -30,45 +30,45 @@ export function Dashboard({ khajaUser }: DashboardProps) {
   const [filter, setFilter]     = useState<LineStatusFilter>('Active')
   const [loading, setLoading]   = useState(true)
 
+  // Effect 1: invariant data — only re-fetches when user changes, NOT on filter tab change
   useEffect(() => {
     Promise.all([
-      getLinesByEmail(khajaUser.email, filter),
       getAllLines('All'),
       getMyHeaders(khajaUser.code, khajaUser.email),
-    ])
-      .then(([mine, all, myHeaders]) => {
-        setMyLines(mine)
-        setAllLines(all)
-        // Only docs where I AM THE PAYER — for Due Receipt / dispute badge
-        setMyDocNos(new Set(myHeaders.filter(h => h.paymentBy === khajaUser.code).map(h => h.no)))
-      })
+    ]).then(([all, myHeaders]) => {
+      setAllLines(all)
+      setMyDocNos(new Set(myHeaders.filter(h => h.paymentBy === khajaUser.code).map(h => h.no)))
+    })
+  }, [khajaUser.email, khajaUser.code]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect 2: filter-dependent — re-fetches only when tab changes
+  useEffect(() => {
+    setLoading(true)
+    getLinesByEmail(khajaUser.email, filter)
+      .then(setMyLines)
       .finally(() => setLoading(false))
-  }, [khajaUser.email, khajaUser.code, filter])
+  }, [khajaUser.email, filter])
 
-  // Lines where I am the debtor (what I owe others)
-  const myAll     = allLines.filter(l => l.userEmail.toLowerCase() === khajaUser.email.toLowerCase())
-  const totalOwed = myAll.filter(l => l.paymentStatus !== 'Paid').reduce((s, l) => s + l.amount, 0)
-  const totalPaid = myAll.filter(l => l.paymentStatus === 'Paid').reduce((s, l) => s + l.amount, 0)
-  const disputed    = myAll.filter(l => l.paymentStatus === 'Rejected').length
-  const outstanding = myAll.filter(l => l.paymentStatus !== 'Paid')
+  // Memoised derived values — only recompute when allLines/myDocNos change
+  const myAll       = useMemo(() => allLines.filter(l => l.userEmail.toLowerCase() === khajaUser.email.toLowerCase()), [allLines, khajaUser.email])
+  const totalOwed   = useMemo(() => myAll.filter(l => l.paymentStatus !== 'Paid').reduce((s, l) => s + l.amount, 0), [myAll])
+  const totalPaid   = useMemo(() => myAll.filter(l => l.paymentStatus === 'Paid').reduce((s, l) => s + l.amount, 0), [myAll])
+  const disputed    = useMemo(() => myAll.filter(l => l.paymentStatus === 'Rejected').length, [myAll])
+  const outstanding = useMemo(() => myAll.filter(l => l.paymentStatus !== 'Paid'), [myAll])
 
-  // Lines from MY documents that others haven't paid yet (excludes own line)
-  const dueReceipts = allLines.filter(l =>
-    myDocNos.has(l.documentNo) &&
-    l.paymentStatus !== 'Paid' &&
+  const dueReceipts = useMemo(() => allLines.filter(l =>
+    myDocNos.has(l.documentNo) && l.paymentStatus !== 'Paid' &&
     l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
-  )
-  const dueTotal = dueReceipts.reduce((s, l) => s + l.amount, 0)
+  ), [allLines, myDocNos, khajaUser.email])
+  const dueTotal = useMemo(() => dueReceipts.reduce((s, l) => s + l.amount, 0), [dueReceipts])
 
-  // Lines from my docs that others have Paid (excludes own auto-paid line)
-  const receivedLines = allLines.filter(l =>
-    myDocNos.has(l.documentNo) &&
-    l.paymentStatus === 'Paid' &&
+  const receivedLines = useMemo(() => allLines.filter(l =>
+    myDocNos.has(l.documentNo) && l.paymentStatus === 'Paid' &&
     l.userEmail.toLowerCase() !== khajaUser.email.toLowerCase()
-  )
-  const totalReceived = receivedLines.reduce((s, l) => s + l.amount, 0)
+  ), [allLines, myDocNos, khajaUser.email])
+  const totalReceived = useMemo(() => receivedLines.reduce((s, l) => s + l.amount, 0), [receivedLines])
 
-  const chartData = Object.values(
+  const chartData = useMemo(() => Object.values(
     myAll.reduce<Record<string, { name: string; paid: number; owed: number }>>((acc, l) => {
       const key = l.documentNo
       if (!acc[key]) acc[key] = { name: l.documentNo.replace(/[^0-9]/g,''), paid: 0, owed: 0 }
@@ -76,15 +76,15 @@ export function Dashboard({ khajaUser }: DashboardProps) {
       else acc[key].owed += l.amount
       return acc
     }, {})
-  ).slice(-7)
+  ).slice(-7), [myAll])
 
-  const stats = [
+  const stats = useMemo(() => [
     { label: 'Outstanding',      value: totalOwed,     prefix: 'Rs. ', icon: Clock,          color: '#D97706' },
     { label: 'Total Paid',       value: totalPaid,     prefix: 'Rs. ', icon: CheckCircle2,   color: '#10B981' },
     { label: 'Due Receipt',      value: dueTotal,      prefix: 'Rs. ', icon: Receipt,        color: '#60A5FA' },
     { label: 'Total Receipts',   value: totalReceived, prefix: 'Rs. ', icon: TrendingUp,     color: '#34D399' },
     { label: 'Disputes',         value: disputed,      prefix: '', suffix: disputed === 1 ? ' dispute' : ' disputes', icon: AlertTriangle, color: '#EF4444' },
-  ]
+  ], [totalOwed, totalPaid, dueTotal, totalReceived, disputed])
 
   return (
     <div className="px-4 lg:px-8 py-6 space-y-6 max-w-5xl mx-auto">
